@@ -28,6 +28,8 @@
 #include "FreeRTOS.h"
 #include "list.h"
 #include "FreeRTOS_IP.h"
+#include "task.h"
+#include "queue.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,6 +83,81 @@ void _Error_Handler(char * file, int line)
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+	xQueueHandle Queue_RX = 0;
+	xQueueHandle Queue_TX = 0;
+
+	xSemaphoreHandle Gatekeeper = 0;                             // Inicializa o guardião do Semáforo a ser entregue a alguma tarefa
+
+	int *DataFromQueueRX = 0;                                    // Inicializa uma variável para receber dados da fila de dados recebidos da USB
+
+	void ISR_Handle (void){
+		xSemaphoreGiveFromISR(Gatekeeper, &task_woken);          // Devolve o semáforo da rotina de interrupção
+		long task_woken = 0;
+		if(task_woken){
+			vPortYieldFromISR();                                 // Volta para tarefa que está precisando do semáforo se estiver acordada
+		}
+	}
+
+	void Sleep (void){
+		// Coloca o núcleo em modo sleep
+	}
+
+	void Task1 (void *p){
+
+		for( ;; ){
+			xSemaphoreGive(Gatekeeper, 100);                     // Devolve o semáforo
+			vTaskDelete(Task2);                                  // Deleta a tarefa 2 que não está sendo usada nesse momento
+			vTaskDelete(Task3);                                  // Deleta a tarefa 3 que não está sendo usada nesse momento
+			vTaskDelete(Task4);                                  // Deleta a tarefa 4 que não está sendo usada nesse momento
+		    Sleep();
+		}
+	}
+
+	void Task2 (void *p){
+
+		for( ;; ){
+            if(xSemaphoreTake(Gatekeeper, 1000)){                // Testa se a tarefa possui o semáforo
+            	xQueueSend(Queue_RX, GetDataFromUSB, 100)        // Envia para a fila dos elementos recebidos, o dado recebido via USB, aguardandono máx. 100ms
+            }
+		}
+	}
+
+	void Task3 (void *p){
+
+		for( ;; ){
+			if(xSemaphoreTake(Gatekeeper, 1000)){                // Testa se a tarefa possui o semáforo
+				xQueueReceive(Queue_RX, &DataFromQueueRX, 100);  // Recebe os dados da fila de recebimento e os coloca no buffer DataFromQueueRX
+				//Acender LEDs
+			    }
+		}
+	}
+
+	void Task4 (void *p){
+
+		for( ;; ){
+			//Quando a interrupção ocorrer, envia dados da filda de transmissão para a porta USB
+			if(IsButtonPressed(GPIOB_Pin)){                      // Checa se o butão foi apertado
+				xQueueReceive(Queue_TX, SendDataToUSB, 100);     // Envia os dados da fila de transmissão
+				ISR_Handle();                                    // Entra na rotina de interrupção
+			}
+		}
+	}
+
+	int* GetDataFromUSB(void){
+		//receber dados da porta USB
+	}
+
+	int* SendDataToUSB(void){
+		// Enviar dados para porta USB
+	}
+
+	void IsButtonPressed (int gpioB){
+		if(GPIOB_Pin == 1)
+			return 1;
+		else
+			return 0;
+	}
+
 /* USER CODE END 0 */
 
 /**
@@ -91,7 +168,46 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+	/* Criação do guardião do semáforo */
+	Gatekeeper = xSemaphoreCreateMutex();
+
+	/* Criação das filas*/
+	Queue_RX = xQueueCreate(8, sizeof(int));
+	Queue_TX = xQueueCreate(8, sizeof(int));
+
+	/* Criação das tarefas*/
+	xTaskCreate(Task1,                                    /* Ponteiro para a Tarefa */
+			   (const char* const) "Idle",                /* Nome da Tarefa */
+			   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
+			   NULL,                                      /* Parâmetros passados para a Tarefa */
+			   1,                                         /* Prioridade da Tarefa */
+			   NULL);                                     /* Handle para a tarefa */
+
+	xTaskCreate(Task2,                                    /* Ponteiro para a Tarefa */
+		   	   (const char* const) "RX",                  /* Nome da Tarefa */
+		   	   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
+			   NULL,                                      /* Parâmetros passados para a Tarefa */
+		   	   3,                                         /* Prioridade da Tarefa */
+			   NULL);                                     /* Handle para a tarefa */
+
+	xTaskCreate(Task3,                                    /* Ponteiro para a Tarefa */
+			   (const char* const) "LED",                 /* Nome da Tarefa */
+			   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
+			   NULL,                                      /* Parâmetros passados para a Tarefa */
+			   2,                                         /* Prioridade da Tarefa */
+			   NULL);                                     /* Handle para a tarefa */
+
+	xTaskCreate(Task4,                                    /* Ponteiro para a Tarefa */
+			   (const char* const) "TX",                  /* Nome da Tarefa */
+			   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
+			   NULL,                             		  /* Parâmetros passados para a Tarefa */
+			   4,                                		  /* Prioridade da Tarefa */
+			   NULL);                            		  /* Handle para a tarefa */
+
+		/* Inicialização do Scheduler */
+		vTaskStartScheduler();
+
+	/* USER CODE END 1 */
   
 
   /* MCU Configuration--------------------------------------------------------*/
