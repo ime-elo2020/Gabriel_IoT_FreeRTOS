@@ -51,4 +51,4 @@ onde fica armazenado.
 
 # Fluxograma do Firmware:
 
-<img src="Repositorio_Imagens/Fluxograma_Firmware_versao3.PNG" width="1000">
+<img src="Repositorio_Imagens/Fluxograma_Firmware_versao4.PNG" width="1000">
