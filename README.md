@@ -40,3 +40,15 @@ onde fica armazenado.
 # Diagrama de Blocos dos Periféricos e Hardware:
 
 <img src="Repositorio_Imagens/Diagrama_Blocos_Perifericos_versao2.PNG" width="1000">
+
+# Configuração de Periféricos:
+
+<img src="Repositorio_Imagens/Pinagem.PNG" width="1000">
+
+# Configuração de Clocks:
+
+<img src="Repositorio_Imagens/Clock_Config.PNG" width="1000">
+
+# Fluxograma do Firmware:
+
+<img src="Repositorio_Imagens/Fluxograma_Firmware_versao3.PNG" width="1000">
