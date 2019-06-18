@@ -39,4 +39,4 @@ onde fica armazenado.
 
 # Diagrama de Blocos dos Periféricos e Hardware:
 
-
+<img src="Repositorio_Imagens/Diagrama_Blocos_Perifericos_versao2.PNG" width="1000">
