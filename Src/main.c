@@ -86,38 +86,38 @@ void _Error_Handler(char * file, int line)
 	xQueueHandle Queue_RX = 0;
 	xQueueHandle Queue_TX = 0;
 
-	xSemaphoreHandle Gatekeeper = 0;                             // Inicializa o guardi„o do Sem·foro a ser entregue a alguma tarefa
+	xSemaphoreHandle Gatekeeper = 0;                             // Inicializa o guardi√£o do Sem√°foro a ser entregue a alguma tarefa
 
-	int *DataFromQueueRX = 0;                                    // Inicializa uma vari·vel para receber dados da fila de dados recebidos da USB
+	int *DataFromQueueRX = 0;                                    // Inicializa uma vari√°vel para receber dados da fila de dados recebidos da USB
 
 	void ISR_Handle (void){
-		xSemaphoreGiveFromISR(Gatekeeper, &task_woken);          // Devolve o sem·foro da rotina de interrupÁ„o
+		xSemaphoreGiveFromISR(Gatekeeper, &task_woken);          // Devolve o sem√°foro da rotina de interrup√ß√£o
 		long task_woken = 0;
 		if(task_woken){
-			vPortYieldFromISR();                                 // Volta para tarefa que est· precisando do sem·foro se estiver acordada
+			vPortYieldFromISR();                                 // Volta para tarefa que est√° precisando do sem√°foro se estiver acordada
 		}
 	}
 
 	void Sleep (void){
-		// Coloca o n˙cleo em modo sleep
+		// Coloca o n√∫cleo em modo sleep
 	}
 
 	void Task1 (void *p){
 
 		for( ;; ){
-			xSemaphoreGive(Gatekeeper, 100);                     // Devolve o sem·foro
-			vTaskDelete(Task2);                                  // Deleta a tarefa 2 que n„o est· sendo usada nesse momento
-			vTaskDelete(Task3);                                  // Deleta a tarefa 3 que n„o est· sendo usada nesse momento
-			vTaskDelete(Task4);                                  // Deleta a tarefa 4 que n„o est· sendo usada nesse momento
-		    Sleep();
+			xSemaphoreGive(Gatekeeper, 100);                     // Devolve o sem√°foro
+			vTaskDelete(Task2);                                  // Deleta a tarefa 2 que n√£o est√° sendo usada nesse momento
+			vTaskDelete(Task3);                                  // Deleta a tarefa 3 que n√£o est√° sendo usada nesse momento
+			vTaskDelete(Task4);                                  // Deleta a tarefa 4 que n√£o est√° sendo usada nesse momento
+		    Sleep();                                             // Power Save
 		}
 	}
 
 	void Task2 (void *p){
 
 		for( ;; ){
-            if(xSemaphoreTake(Gatekeeper, 1000)){                // Testa se a tarefa possui o sem·foro
-            	xQueueSend(Queue_RX, GetDataFromUSB, 100)        // Envia para a fila dos elementos recebidos, o dado recebido via USB, aguardandono m·x. 100ms
+            if(xSemaphoreTake(Gatekeeper, 1000)){                // Testa se a tarefa possui o sem√°foro
+            	xQueueSend(Queue_RX, GetDataFromUSB, 100)        // Envia para a fila dos elementos recebidos, o dado recebido via USB, aguardando no m√°x. 100ms
             }
 		}
 	}
@@ -125,9 +125,12 @@ void _Error_Handler(char * file, int line)
 	void Task3 (void *p){
 
 		for( ;; ){
-			if(xSemaphoreTake(Gatekeeper, 1000)){                // Testa se a tarefa possui o sem·foro
+			if(xSemaphoreTake(Gatekeeper, 1000)){                // Testa se a tarefa possui o sem√°foro
 				xQueueReceive(Queue_RX, &DataFromQueueRX, 100);  // Recebe os dados da fila de recebimento e os coloca no buffer DataFromQueueRX
-				//Acender LEDs
+
+				if()                                            // Testa condi√ß√£o para acender os lEDs
+
+				//Acender LEDs de acordo com o dado recebido
 			    }
 		}
 	}
@@ -135,10 +138,10 @@ void _Error_Handler(char * file, int line)
 	void Task4 (void *p){
 
 		for( ;; ){
-			//Quando a interrupÁ„o ocorrer, envia dados da filda de transmiss„o para a porta USB
-			if(IsButtonPressed(GPIOB_Pin)){                      // Checa se o but„o foi apertado
-				xQueueReceive(Queue_TX, SendDataToUSB, 100);     // Envia os dados da fila de transmiss„o
-				ISR_Handle();                                    // Entra na rotina de interrupÁ„o
+			//Quando a interrup√ß√£o ocorrer, envia dados da fila de transmiss√£o para a porta USB
+			if(IsButtonPressed(GPIOB_Pin)){                      // Checa se o but√£o foi apertado
+				xQueueReceive(Queue_TX, SendDataToUSB, 100);     // Envia os dados da fila de transmiss√£o
+				ISR_Handle();                                    // Chama na rotina de interrup√ß√£o para tratar do pressionamento do bot√£o
 			}
 		}
 	}
@@ -168,43 +171,43 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-	/* CriaÁ„o do guardi„o do sem·foro */
+	/* Cria√ß√£o do guardi√£o do sem√°foro */
 	Gatekeeper = xSemaphoreCreateMutex();
 
-	/* CriaÁ„o das filas*/
+	/* Cria√ß√£o das filas*/
 	Queue_RX = xQueueCreate(8, sizeof(int));
 	Queue_TX = xQueueCreate(8, sizeof(int));
 
-	/* CriaÁ„o das tarefas*/
+	/* Cria√ß√£o das tarefas*/
 	xTaskCreate(Task1,                                    /* Ponteiro para a Tarefa */
 			   (const char* const) "Idle",                /* Nome da Tarefa */
 			   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
-			   NULL,                                      /* Par‚metros passados para a Tarefa */
+			   NULL,                                      /* Par√¢metros passados para a Tarefa */
 			   1,                                         /* Prioridade da Tarefa */
 			   NULL);                                     /* Handle para a tarefa */
 
 	xTaskCreate(Task2,                                    /* Ponteiro para a Tarefa */
 		   	   (const char* const) "RX",                  /* Nome da Tarefa */
 		   	   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
-			   NULL,                                      /* Par‚metros passados para a Tarefa */
+			   NULL,                                      /* Par√¢metros passados para a Tarefa */
 		   	   3,                                         /* Prioridade da Tarefa */
 			   NULL);                                     /* Handle para a tarefa */
 
 	xTaskCreate(Task3,                                    /* Ponteiro para a Tarefa */
 			   (const char* const) "LED",                 /* Nome da Tarefa */
 			   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
-			   NULL,                                      /* Par‚metros passados para a Tarefa */
+			   NULL,                                      /* Par√¢metros passados para a Tarefa */
 			   2,                                         /* Prioridade da Tarefa */
 			   NULL);                                     /* Handle para a tarefa */
 
 	xTaskCreate(Task4,                                    /* Ponteiro para a Tarefa */
 			   (const char* const) "TX",                  /* Nome da Tarefa */
 			   configMINIIMAL_STACK_SIZE,                 /* Profundidade da Pilha */
-			   NULL,                             		  /* Par‚metros passados para a Tarefa */
+			   NULL,                             		  /* Par√¢metros passados para a Tarefa */
 			   4,                                		  /* Prioridade da Tarefa */
 			   NULL);                            		  /* Handle para a tarefa */
 
-		/* InicializaÁ„o do Scheduler */
+		/* Inicializa√ß√£o do Scheduler */
 		vTaskStartScheduler();
 
 	/* USER CODE END 1 */
